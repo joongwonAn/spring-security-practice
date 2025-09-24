@@ -20,4 +20,9 @@ public class AuthController {
         System.out.println("Login successfully!");
         return "home";
     }
+
+    @GetMapping("/access-denied")
+    public String accessDenied() {
+        return "access-denied";
+    }
 }
