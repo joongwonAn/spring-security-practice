@@ -1,6 +1,8 @@
 package com.springboot.config;
 
+import com.springboot.member.DBMemberService;
 import com.springboot.member.InMemoryMemberService;
+import com.springboot.member.MemberRepository;
 import com.springboot.member.MemberService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -9,9 +11,15 @@ import org.springframework.security.provisioning.UserDetailsManager;
 
 @Configuration
 public class JavaConfiguration {
-    @Bean
+    /*@Bean
     public MemberService inMemoryMemberService(UserDetailsManager userDetailsManager,
                                                PasswordEncoder passwordEncoder) {
         return new InMemoryMemberService(userDetailsManager, passwordEncoder);
+    }*/
+
+    @Bean
+    public MemberService dbMemberService(MemberRepository memberRepository,
+                                         PasswordEncoder passwordEncoder) {
+        return new DBMemberService(memberRepository, passwordEncoder);
     }
 }
