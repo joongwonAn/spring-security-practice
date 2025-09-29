@@ -1,27 +1,42 @@
 package com.springboot.config;
 
+import com.springboot.auth.HelloUserDetailsService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.factory.PasswordEncoderFactories;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.provisioning.InMemoryUserDetailsManager;
-import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 public class SecurityConfiguration {
+
+    private final HelloUserDetailsService helloUserDetailsService;
+
+    public SecurityConfiguration(HelloUserDetailsService helloUserDetailsService) {
+        this.helloUserDetailsService = helloUserDetailsService;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf().disable()
+                .headers().frameOptions().sameOrigin() // iframe 허용 (H2 콘솔용)
+                .and()
                 .formLogin()
                 .loginPage("/auths/login-form")
                 .loginProcessingUrl("/process_login")
                 .failureUrl("/auths/login-form?error")
                 .and()
+                .rememberMe(remember -> remember
+                        .key("my-remember-key")
+                        .tokenValiditySeconds(7 * 24 * 60 * 60)
+                        .rememberMeParameter("remember-me")
+                        .userDetailsService(helloUserDetailsService)
+                )
                 .logout() // logout 기능 추가
                 .logoutUrl("/logout")
                 .logoutSuccessUrl("/")
@@ -40,8 +55,8 @@ public class SecurityConfiguration {
         return http.build();
     }
 
-    @Bean
-    public UserDetailsManager userDetailService() {
+    /*@Bean
+    public UserDetailsManager userDetailService() { //  인메모리용
         UserDetails userDetails =
                 User.withDefaultPasswordEncoder()
                         .username("jw@gmail.com")
@@ -57,10 +72,18 @@ public class SecurityConfiguration {
                         .build();
 
         return new InMemoryUserDetailsManager(userDetails, admin);
-    }
+    }*/
 
     @Bean
     public PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager() {
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(helloUserDetailsService);
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return new ProviderManager(authProvider);
     }
 }
